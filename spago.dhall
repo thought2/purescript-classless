@@ -1,0 +1,32 @@
+{ name = "classless"
+, dependencies =
+  [ "argonaut"
+  , "argonaut-codecs"
+  , "argonaut-core"
+  , "arrays"
+  , "bifunctors"
+  , "console"
+  , "control"
+  , "effect"
+  , "either"
+  , "enums"
+  , "foreign-object"
+  , "gen"
+  , "heterogeneous"
+  , "identity"
+  , "lists"
+  , "maybe"
+  , "partial"
+  , "prelude"
+  , "quickcheck"
+  , "record"
+  , "st"
+  , "strings"
+  , "tuples"
+  , "type-equality"
+  , "typelevel-prelude"
+  , "unsafe-coerce"
+  ]
+, packages = ./packages.dhall
+, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+}
