@@ -20,6 +20,8 @@
   , "prelude"
   , "quickcheck"
   , "record"
+  , "record-extra"
+  , "record-studio"
   , "st"
   , "strings"
   , "tuples"

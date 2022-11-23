@@ -24,7 +24,7 @@ module Classless.Arbitrary
   , record
   , string
   , sum
-  , tuple
+  , tuple, record'
   , unit
   , class GetCases
   , getCases
@@ -38,6 +38,7 @@ module Classless.Arbitrary
 
 import Prelude hiding (unit, identity)
 
+import Classless (class SequenceProduct, class SequenceRecord, sequenceProduct, sequenceRecord)
 import Control.Monad.Gen (chooseBool, sized)
 import Control.Monad.Gen.Common as MGC
 import Control.Monad.ST as ST
@@ -46,6 +47,7 @@ import Data.Array.NonEmpty.Internal (NonEmptyArray)
 import Data.Array.ST as STA
 import Data.Either (Either)
 import Data.Enum (toEnumWithDefaults)
+import Data.Generic.Rep (class Generic, Constructor(..), Sum(..), to)
 import Data.Identity (Identity(..))
 import Data.List (List)
 import Data.Maybe (Maybe, fromJust)
@@ -59,20 +61,21 @@ import Data.Semigroup.Last (Last(..))
 import Data.String.CodeUnits as Str
 import Data.String.NonEmpty.CodeUnits as NESCU
 import Data.String.NonEmpty.Internal (NonEmptyString)
-import Data.Tuple (Tuple(..))
-import Partial.Unsafe (unsafePartial)
-import Prelude as P
-import Test.QuickCheck.Gen (Gen, frequency)
-import Test.QuickCheck.Gen as Gen
-import Classless (class SequenceProduct, class SequenceRecord, sequenceProduct, sequenceRecord)
-import Data.Generic.Rep (class Generic, Constructor(..), Sum(..), to)
 import Data.Symbol (class IsSymbol)
+import Data.Tuple (Tuple(..))
 import Heterogeneous.Folding (class Folding, class HFoldl, hfoldl)
 import Heterogeneous.Mapping (class HMap, class Mapping, hmap)
-import Prim.Row (class Cons, class Union)
+import Partial.Unsafe (unsafePartial)
+import Prelude as P
+import Prim.Row (class Cons, class Lacks, class Union)
+import Record as R
 import Record as Record
+import Test.QuickCheck.Gen (Gen, frequency)
+import Test.QuickCheck.Gen as Gen
+import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
 import Type.Row.Homogeneous (class Homogeneous)
+import Unsafe.Coerce (unsafeCoerce)
 
 type Arbitrary a = Gen a
 
@@ -156,6 +159,10 @@ class Record rspec r | r -> rspec where
 instance (SequenceRecord rspec r Gen) => Record rspec r where
   record = sequenceRecord
 
+record' :: forall rspec r. (SequenceRecord rspec r Gen) => Record rspec -> Arbitrary (Record r) 
+record' = sequenceRecord
+
+
 --- Sum
 
 class Sum ri a | a -> ri where
@@ -164,10 +171,10 @@ class Sum ri a | a -> ri where
 instance
   ( Generic a rep
   , GetCases ri rep ro'
-  , Homogeneous ro' (Gen rep)
   , HMap (MapRepToA a) { | ro' } { | ro }
-  , Homogeneous ro (Gen a)
   , HomRecToNEA ro (Gen a)
+  , Homogeneous ro (Gen a)
+  , Homogeneous ro' (Gen rep)
   ) =>
   Sum ri a where
   sum sumSpec = homRecToNEA cases
@@ -187,7 +194,7 @@ class GetCases (ri :: Row Type) (rep :: Type) (ro :: Row Type) | rep ri -> ro wh
 
 instance
   ( Cons sym (Gen (Constructor sym genRep)) () ro
-  , Cons sym prodSpec rix ri
+  , Cons sym prodSpec () ri
   , SequenceProduct prodSpec genRep Gen
   , IsSymbol sym
   ) =>
@@ -200,19 +207,30 @@ instance
       # sequenceProduct
 
 instance
-  ( GetCases ri repA roA
-  , GetCases ri repB roB
+  ( GetCases riA repA roA
+  , GetCases riB repB roB
+  , Cons sym y () riA
+  , Cons sym y riB ri
+  , Lacks sym riB
+  , TypeEquals repA (Constructor sym x)
   , HMap MapInl { | roA } { | roA' }
   , HMap MapInr { | roB } { | roB' }
   , Union roA' roB' ro
+  , IsSymbol sym
+  , Union riA riB ri
+  , Union riB riA ri
   ) =>
   GetCases ri (Sum repA repB) ro where
-  getCases r _ = Record.union
-    (hmap MapInl xA)
-    (hmap MapInr xB)
-    where
-    xA = getCases r (Proxy :: _ repA) :: { | roA }
-    xB = getCases r (Proxy :: _ repB) :: { | roB }
+  getCases r _ =     
+    Record.union
+      (hmap MapInl xA)
+      (hmap MapInr xB)
+      where
+      xA = getCases (pick r :: {| riA}) (Proxy :: _ repA) :: { | roA }
+      xB = getCases (pick r :: {| riB}) (Proxy :: _ repB) :: { | roB }
+
+pick :: forall r2 rx r1. Union r2 rx r1 =>  {| r1} -> {| r2}
+pick = unsafeCoerce
 
 -- 
 
