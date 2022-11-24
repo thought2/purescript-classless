@@ -28,13 +28,13 @@ module Classless
   , sequenceProduct
   , sequenceRecord
   , sequenceRecordRL
+  , noArgs
   , type (~)
-  )
-  where
+  ) where
 
 import Prelude
 
-import Data.Generic.Rep (Argument(..), Product(..))
+import Data.Generic.Rep (Argument(..), NoArguments(..), Product(..))
 import Data.Symbol (class IsSymbol)
 import Heterogeneous.Folding (class FoldingWithIndex, class HFoldlWithIndex, hfoldlWithIndex)
 import Heterogeneous.Mapping (class HMap, class Mapping, hmap, mapping)
@@ -57,6 +57,9 @@ infixr 6 type ProductSpec as ~
 infixr 6 ProductSpec as ~
 
 data NoArgs = NoArgs
+
+noArgs :: NoArgs
+noArgs = NoArgs
 
 --- Init
 
@@ -81,7 +84,7 @@ else instance (Init fn a, InitIt fn b) => InitIt fn (a ~ b) where
 else instance InitIt fn NoArgs where
   initIt _ = NoArgs
 
-else instance (Init fn a) =>InitIt fn a where
+else instance (Init fn a) => InitIt fn a where
   initIt fn = init fn
 
 data InitItRecordField a = InitItRecordField a
@@ -96,7 +99,6 @@ instance
   foldingWithIndex (InitItRecordField fn) s r _ = Record.insert s (initIt fn) r
 
 --- MapProduct
-
 
 --- InitProduct
 
@@ -238,8 +240,8 @@ instance (IsSymbol k, Cons k a rx r) => Mapping (MapProp k) { | r } a where
 class SequenceProduct specI specO (f :: Type -> Type) | specO f -> specI where
   sequenceProduct :: specI -> f specO
 
-instance (Applicative f) => SequenceProduct NoArgs NoArgs f where
-  sequenceProduct = pure
+instance (Applicative f) => SequenceProduct NoArgs NoArguments f where
+  sequenceProduct _ = pure NoArguments
 
 instance (Applicative f) => SequenceProduct (f a) (Argument a) f where
   sequenceProduct x = ado
@@ -274,7 +276,7 @@ instance
 class
   Functor m <=
   SequenceRecordRL (rl :: RL.RowList Type) row from to m
-  | rl row ->  from to  m
+  | rl row -> from to m
   where
   sequenceRecordRL :: Proxy rl -> Record row -> m (Builder { | from } { | to })
 

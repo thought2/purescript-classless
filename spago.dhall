@@ -1,34 +1,5 @@
 { name = "classless"
-, dependencies =
-  [ "argonaut"
-  , "argonaut-codecs"
-  , "argonaut-core"
-  , "arrays"
-  , "bifunctors"
-  , "console"
-  , "control"
-  , "effect"
-  , "either"
-  , "enums"
-  , "foreign-object"
-  , "gen"
-  , "heterogeneous"
-  , "identity"
-  , "lists"
-  , "maybe"
-  , "partial"
-  , "prelude"
-  , "quickcheck"
-  , "record"
-  , "record-extra"
-  , "record-studio"
-  , "st"
-  , "strings"
-  , "tuples"
-  , "type-equality"
-  , "typelevel-prelude"
-  , "unsafe-coerce"
-  ]
+, dependencies = [ "heterogeneous", "prelude", "record" ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }
