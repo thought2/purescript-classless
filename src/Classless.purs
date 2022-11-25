@@ -7,8 +7,6 @@ module Classless
   , NoArgs(..)
   , ProductSpec(..)
   , class Init
-  , class InitIt
-  , initIt
   , class InitProduct
   , class InitRecord
   , class InitSum
@@ -30,6 +28,7 @@ module Classless
   , sequenceRecordRL
   , noArgs
   , type (~)
+  , pick
   ) where
 
 import Prelude
@@ -38,7 +37,7 @@ import Data.Generic.Rep (Argument(..), NoArguments(..), Product(..))
 import Data.Symbol (class IsSymbol)
 import Heterogeneous.Folding (class FoldingWithIndex, class HFoldlWithIndex, hfoldlWithIndex)
 import Heterogeneous.Mapping (class HMap, class Mapping, hmap, mapping)
-import Prim.Row (class Cons, class Lacks)
+import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.Row as Row
 import Prim.RowList (class RowToList)
 import Prim.RowList as RL
@@ -47,6 +46,7 @@ import Record as Record
 import Record.Builder (Builder)
 import Record.Builder as Builder
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 --- Types
 
@@ -65,40 +65,6 @@ noArgs = NoArgs
 
 class Init fn a where
   init :: fn -> a
-
---- InitIt
-
-class InitIt fn a where
-  initIt :: fn -> a
-
-instance
-  ( RowToList r rl
-  , HFoldlWithIndex (InitRecordField fn) {} (Proxy rl) { | r }
-  ) =>
-  InitIt fn (Record r) where
-  initIt fn = hfoldlWithIndex (InitRecordField fn) {} (Proxy :: Proxy rl)
-
-else instance (Init fn a, InitIt fn b) => InitIt fn (a ~ b) where
-  initIt fn = init fn ~ initIt fn
-
-else instance InitIt fn NoArgs where
-  initIt _ = NoArgs
-
-else instance (Init fn a) => InitIt fn a where
-  initIt fn = init fn
-
-data InitItRecordField a = InitItRecordField a
-
-instance
-  ( IsSymbol sym
-  , Lacks sym r
-  , Cons sym a r rr
-  , InitIt fn a
-  ) =>
-  FoldingWithIndex (InitItRecordField fn) (Proxy sym) { | r } (Proxy a) { | rr } where
-  foldingWithIndex (InitItRecordField fn) s r _ = Record.insert s (initIt fn) r
-
---- MapProduct
 
 --- InitProduct
 
@@ -315,3 +281,8 @@ else instance
 
 instance Applicative m => SequenceRecordRL RL.Nil row () () m where
   sequenceRecordRL _ _ = pure identity
+
+--- Util
+
+pick :: forall r2 rx r1. Union r2 rx r1 => { | r1 } -> { | r2 }
+pick = unsafeCoerce
