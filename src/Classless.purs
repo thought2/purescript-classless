@@ -162,8 +162,6 @@ data MapProp (k :: Symbol) = MapProp (Proxy k)
 instance (IsSymbol k, Cons k a rx r) => Mapping (MapProp k) { | r } a where
   mapping (MapProp k) = Record.get k
 
-
-
 --- SequenceProduct
 
 class SequenceProduct specI specO (f :: Type -> Type) | specO f -> specI where
