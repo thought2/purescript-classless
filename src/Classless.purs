@@ -162,44 +162,7 @@ data MapProp (k :: Symbol) = MapProp (Proxy k)
 instance (IsSymbol k, Cons k a rx r) => Mapping (MapProp k) { | r } a where
   mapping (MapProp k) = Record.get k
 
--- --- SequenceSum
 
--- class SequenceSum specI specO f where
---   sequenceSum :: { | specI } -> f { | specO }
-
--- instance
---   ( RowToList specI specRL
---   , SequenceSumRL specRL specI specO f
---   ) =>
---   SequenceSum specI specO f where
---   sequenceSum = sequenceSumRL (Proxy :: _ specRL)
-
--- class
---   SequenceSumRL
---     (specRL :: RowList Type)
---     (specI :: Row Type)
---     (specO :: Row Type)
---     (f :: Type -> Type)
---   | specRL specI -> specO f where
---   sequenceSumRL :: Proxy specRL -> { | specI } -> f { | specO }
-
--- instance (Applicative f) => SequenceSumRL Nil specI () f where
---   sequenceSumRL _ _ = pure {}
-
--- instance
---   ( SequenceSumRL rl specI specO' f
---   , Cons s t specX specI
---   , Cons s t' specO' specO
---   , Lacks s specO'
---   , SequenceProduct t t' f
---   , Applicative f
---   , IsSymbol s
---   ) =>
---   SequenceSumRL (Cons s t rl) specI specO f where
---   sequenceSumRL _ spec = ado
---     x <- sequenceProduct $ Record.get (Proxy :: _ s) spec
---     y <- sequenceSumRL (Proxy :: _ rl) spec
---     in Record.insert (Proxy :: _ s) x y
 
 --- SequenceProduct
 
